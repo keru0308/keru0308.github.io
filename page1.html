@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>GGST Player Overlay</title>
+<style>
+  body { margin:0; padding:16px; background:transparent; color:white; font-family:sans-serif; text-shadow:1px 1px 3px #000; }
+  .container { background:rgba(0,0,0,0.6); border-radius:12px; padding:16px; max-width:420px; }
+  .error { color:#ff6b6b; font-size:14px; margin-top:8px; white-space:pre-wrap; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1 id="name">Loading...</h1>
+  <div id="info"></div>
+  <div id="chars"></div>
+  <div class="error" id="error"></div>
+</div>
+
+<script>
+const PLAYER_ID = "260412075351445661";
+const API = `https://puddle.farm/api/player/${PLAYER_ID}`;
+
+async function update() {
+  const errEl = document.getElementById("error");
+  errEl.textContent = "";
+  try {
+    const res = await fetch(API);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+
+    document.getElementById("name").textContent = data.name || "Unknown";
+    document.getElementById("info").textContent = 
+      `Platform: ${data.platform || "-"}　Global: #${data.top_global || "-"}`;
+
+    const charsDiv = document.getElementById("chars");
+    charsDiv.innerHTML = "";
+    (data.ratings || [])
+      .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+      .slice(0, 5)
+      .forEach(c => {
+        charsDiv.innerHTML += `
+          <div style="margin:6px 0;padding:8px;background:rgba(255,255,255,0.1);border-radius:6px">
+            ${c.character || c.char_short} 
+            <b style="color:#ffd966">${c.rating ? Math.round(c.rating) : "-"}</b>
+            <div style="font-size:13px;opacity:0.8">Rank: #${c.top_char||"-"}　${c.match_count||0} matches</div>
+          </div>`;
+      });
+  } catch (e) {
+    document.getElementById("name").textContent = "Error";
+    errEl.textContent = "取得失敗: " + e.message;
+  }
+}
+
+update();
+setInterval(update, 15000);
+</script>
+</body>
+</html>
